@@ -12,3 +12,7 @@ export default function HomePage() {
 
   return null // No renderiza nada en pantalla mientras redirige
 }
+
+export function generateStaticParams() {
+  return []; // Le dice a Next.js que no pre-renderice ningún ID en el build
+}
