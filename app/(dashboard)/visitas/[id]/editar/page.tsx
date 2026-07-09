@@ -1,7 +1,7 @@
 import EditarVisitaClient from "./EditarVisitaClient"
 
 export function generateStaticParams() {
-  return [] // Indica a Next.js (durante export estático) que no pre-genere rutas fijas
+  return [{ id: "1" }] // Genera una ruta dummy para pasar la validación estática de Next.js
 }
 
 export default function Page() {
