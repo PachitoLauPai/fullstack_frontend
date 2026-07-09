@@ -217,9 +217,21 @@ export default function DocentesPage() {
     }
   }
 
-  const filteredDocentes = docentes.filter((docente) =>
-    `${docente.nombres} ${docente.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredDocentes = docentes.filter((docente) => {
+    const term = searchTerm.toLowerCase().trim()
+    if (!term) return true
+    
+    const fullName = `${docente.nombres} ${docente.apellidos}`.toLowerCase()
+    const docIdStr = String(docente.id)
+    const docIdFormatted = `DOC-${docente.id.toString().padStart(3, "0")}`.toLowerCase()
+    
+    return (
+      fullName.includes(term) ||
+      docIdStr === term ||
+      docIdFormatted.includes(term) ||
+      docIdStr.includes(term)
+    )
+  })
   
   return (
     <RouteGuard allowedRoles={["ADMIN", "AUDITOR"]}>
@@ -399,9 +411,9 @@ export default function DocentesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[100px]">ID</TableHead>
                       <TableHead>Docente</TableHead>
                       <TableHead className="hidden md:table-cell">Email</TableHead>
-                      <TableHead className="hidden lg:table-cell">Asignaturas</TableHead>
                       <TableHead className="hidden sm:table-cell">Visitas</TableHead>
                       <TableHead>Estado</TableHead>
                       {isAdmin && <TableHead className="w-[60px]">Acciones</TableHead>}
@@ -410,6 +422,11 @@ export default function DocentesPage() {
                   <TableBody>
                     {filteredDocentes.map((docente) => (
                       <TableRow key={docente.id}>
+                        <TableCell>
+                          <span className="font-mono text-sm font-semibold text-muted-foreground">
+                            DOC-{docente.id.toString().padStart(3, "0")}
+                          </span>
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -425,20 +442,6 @@ export default function DocentesPage() {
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           <span className="text-sm text-muted-foreground">{docente.email}</span>
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
-                          <div className="flex flex-wrap gap-1">
-                            {docente.asignaturas && docente.asignaturas.slice(0, 2).map((asig, i) => (
-                              <Badge key={i} variant="secondary" className="text-xs">
-                                {asig}
-                              </Badge>
-                            ))}
-                            {docente.asignaturas && docente.asignaturas.length > 2 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{docente.asignaturas.length - 2}
-                              </Badge>
-                            )}
-                          </div>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
                           <div>

@@ -97,13 +97,17 @@ export default function DashboardPage() {
   const isAuditor = user?.rol === "AUDITOR"
   
   const [auditorStats, setAuditorStats] = useState<DashboardAuditorStats | null>(null)
-  const [isLoading, setIsLoading] = useState(isAuditor)
+  const [isLoading, setIsLoading] = useState(true)
   
   useEffect(() => {
     if (isAuditor) {
       cargarEstadisticasAuditor()
+    } else if (isAdmin) {
+      cargarEstadisticasAdmin()
+    } else {
+      setIsLoading(false)
     }
-  }, [isAuditor])
+  }, [isAuditor, isAdmin])
   
   async function cargarEstadisticasAuditor() {
     try {
@@ -112,6 +116,25 @@ export default function DashboardPage() {
       setAuditorStats(stats)
     } catch (error) {
       toast.error("Error al cargar estadísticas del dashboard")
+      console.error(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function cargarEstadisticasAdmin() {
+    try {
+      setIsLoading(true)
+      const data = await dashboardService.getAdminStats()
+      setAuditorStats({
+        visitasEsteMes: data.estadisticas?.visitasEsteMes ?? 0,
+        docentesEvaluados: data.estadisticas?.docentesEvaluados ?? 0,
+        requerimientosPendientes: data.estadisticas?.requerimientosPendientes ?? 0,
+        proximasVisitas: data.proximasVisitas || [],
+        visitasRecientes: data.visitasRecientes || []
+      })
+    } catch (error) {
+      toast.error("Error al cargar estadísticas del administrador")
       console.error(error)
     } finally {
       setIsLoading(false)
@@ -197,7 +220,7 @@ export default function DashboardPage() {
               <stat.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              {isLoading && isAuditor ? (
+              {isLoading && (isAuditor || isAdmin) ? (
                 <div className="h-8 bg-muted animate-pulse rounded w-16"></div>
               ) : (
                 <>

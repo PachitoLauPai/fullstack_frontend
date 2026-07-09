@@ -55,9 +55,8 @@ export function VisitasTable({ showOnlyMine = false, filters }: VisitasTableProp
           busqueda: filters?.busqueda || null,
           idSede: filters?.idSede ? parseInt(filters.idSede) : null,
           estado: filters?.estado || null,
-          // single fecha: if provided, use as both fechaDesde and fechaHasta
-          fechaDesde: filters?.fecha ? filters.fecha : null,
-          fechaHasta: filters?.fecha ? filters.fecha : null,
+          fechaDesde: filters?.fechaDesde || null,
+          fechaHasta: filters?.fechaHasta || null,
         }
 
         if (user?.rol === "DOCENTE") {
