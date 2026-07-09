@@ -15,7 +15,8 @@ export default function VisitasPage() {
     busqueda: "",
     idSede: "",
     estado: "",
-    fecha: "",
+    fechaDesde: "",
+    fechaHasta: "",
   })
 
   const isDocente = user?.rol === "DOCENTE"

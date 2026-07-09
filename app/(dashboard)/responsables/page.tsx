@@ -97,15 +97,22 @@ function ResponsablesContent() {
     visitas.filter((visita) => visita.idResponsable === responsableId).length
 
   const filteredResponsables = responsables.filter((responsable) => {
-    const query = searchTerm.toLowerCase()
-    return [
-      responsable.nombres,
-      responsable.apellidos,
-      responsable.cargo,
-      responsable.email,
-    ]
-      .filter(Boolean)
-      .some((value) => value!.toLowerCase().includes(query))
+    const term = searchTerm.toLowerCase().trim()
+    if (!term) return true
+
+    const fullName = `${responsable.nombres} ${responsable.apellidos}`.toLowerCase()
+    const resIdStr = String(responsable.id)
+    const resIdFormatted = `RES-${responsable.id.toString().padStart(3, "0")}`.toLowerCase()
+    const cargo = (responsable.cargo || "").toLowerCase()
+    const email = (responsable.email || "").toLowerCase()
+
+    return (
+      fullName.includes(term) ||
+      resIdStr === term ||
+      resIdFormatted.includes(term) ||
+      cargo.includes(term) ||
+      email.includes(term)
+    )
   })
 
   const stats = {
@@ -382,7 +389,7 @@ function ResponsablesContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-accent">
-              {stats.total > 0 ? Math.round(stats.totalVisitas / stats.total) : 0}
+              {stats.total > 0 ? (stats.totalVisitas / stats.total).toFixed(1) : "0"}
             </div>
             <p className="text-xs text-muted-foreground">visitas por responsable</p>
           </CardContent>
@@ -421,6 +428,7 @@ function ResponsablesContent() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[100px]">ID</TableHead>
                     <TableHead>Responsable</TableHead>
                     <TableHead>Cargo</TableHead>
                     <TableHead>Email</TableHead>
@@ -432,13 +440,18 @@ function ResponsablesContent() {
                 <TableBody>
                   {filteredResponsables.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                         No hay responsables que coincidan con la búsqueda.
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredResponsables.map((responsable) => (
                       <TableRow key={responsable.id}>
+                        <TableCell>
+                          <span className="font-mono text-sm font-semibold text-muted-foreground">
+                            RES-{responsable.id.toString().padStart(3, "0")}
+                          </span>
+                        </TableCell>
                         <TableCell>
                           <div className="font-medium">
                             {responsable.nombres} {responsable.apellidos}
@@ -568,18 +581,18 @@ function ResponsablesContent() {
       </Dialog>
 
       <Dialog open={viewVisitsDialogOpen} onOpenChange={setViewVisitsDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="sm:max-w-3xl w-full">
           <DialogHeader>
             <DialogTitle>Visitas del responsable</DialogTitle>
             <DialogDescription>
               {selectedResponsable ? `${selectedResponsable.nombres} ${selectedResponsable.apellidos}` : "Selecciona un responsable para ver sus visitas."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 min-w-0">
             {responsableVisitas.length === 0 ? (
               <p className="text-sm text-muted-foreground">No se encontraron visitas para este responsable.</p>
             ) : (
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto w-full">
                 <Table>
                   <TableHeader>
                     <TableRow>

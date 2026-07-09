@@ -23,4 +23,8 @@ export const dashboardService = {
     const response = await api.get("/visitas/dashboard/auditor-stats");
     return response.data;
   },
+  async getAdminStats(): Promise<any> {
+    const response = await api.get("/dashboard");
+    return response.data;
+  },
 };
