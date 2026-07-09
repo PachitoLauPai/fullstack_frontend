@@ -16,11 +16,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { 
-  Building2, 
-  User, 
-  BookOpen, 
-  Calendar, 
+import {
+  Building2,
+  User,
+  BookOpen,
+  Calendar,
   ClipboardCheck,
   MonitorPlay,
   Users,
@@ -50,12 +50,12 @@ interface EvaluacionRadioProps {
   options?: { value: string; label: string }[]
 }
 
-function EvaluacionRadio({ 
-  id, 
-  label, 
-  value, 
-  onChange, 
-  options = [{ value: "si", label: "SI" }, { value: "no", label: "NO" }] 
+function EvaluacionRadio({
+  id,
+  label,
+  value,
+  onChange,
+  options = [{ value: "si", label: "SI" }, { value: "no", label: "NO" }]
 }: EvaluacionRadioProps) {
   return (
     <div className="flex items-center justify-between gap-4 p-3 rounded-lg border bg-card">
@@ -95,7 +95,7 @@ function SignaturePad({ label, value, onChange }: SignaturePadProps) {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    
+
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
@@ -104,7 +104,7 @@ function SignaturePad({ label, value, onChange }: SignaturePadProps) {
     canvas.width = rect.width * window.devicePixelRatio
     canvas.height = rect.height * window.devicePixelRatio
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
-    
+
     // Set drawing style
     ctx.strokeStyle = "#1e3a5f"
     ctx.lineWidth = 2
@@ -125,9 +125,9 @@ function SignaturePad({ label, value, onChange }: SignaturePadProps) {
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current
     if (!canvas) return { x: 0, y: 0 }
-    
+
     const rect = canvas.getBoundingClientRect()
-    
+
     if ("touches" in e) {
       return {
         x: e.touches[0].clientX - rect.left,
@@ -153,7 +153,7 @@ function SignaturePad({ label, value, onChange }: SignaturePadProps) {
 
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing) return
-    
+
     const canvas = canvasRef.current
     const ctx = canvas?.getContext("2d")
     if (!ctx) return
@@ -167,7 +167,7 @@ function SignaturePad({ label, value, onChange }: SignaturePadProps) {
     if (!isDrawing) return
     setIsDrawing(false)
     setHasSignature(true)
-    
+
     const canvas = canvasRef.current
     if (canvas) {
       onChange(canvas.toDataURL("image/png"))
@@ -247,42 +247,42 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
     horaPractica: "",
     horaTeoria: "",
     lugar: "",
-    
+
     // 1. Control Docente
     docentePresente: "",
     horarioProgramado: "",
     interaccion: "",
     actividad: "",
     observacionesDocente: "",
-    
+
     // 2. Material Aula Virtual
     materialCargado: "",
     observacionesMaterial: "",
-    
+
     // 3. Control Asistencia Estudiantes
     asistenciaAmbienteCumple: "",
     asistenciaAmbienteObs: "",
     asistenciaIntranetCumple: "",
     asistenciaIntranetObs: "",
     observacionesAsistencia: "",
-    
+
     // 4. Control Avance Silabico
     temaCoincideVisita: "",
     temaCoincideAnterior: "",
     ingresoAvanceAulaVirtual: "",
     observacionesAvance: "",
-    
+
     // 5. Guia de Practica
     temaProgramadoGuia: "",
     logroEvidenciado: "",
     rubricaEvaluacion: "",
     observacionesGuia: "",
-    
+
     // Responsable y Requerimientos
     responsable: "",
     requerimientos: [{ id: 1, descripcion: "" }],
     evidenciaImagen: "",
-    
+
     // Firmas digitales
     firmaDocente: "",
     firmaResponsable: ""
@@ -328,7 +328,7 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
   const updateRequerimiento = (id: number, descripcion: string) => {
     setFormData(prev => ({
       ...prev,
-      requerimientos: prev.requerimientos.map(r => 
+      requerimientos: prev.requerimientos.map(r =>
         r.id === id ? { ...r, descripcion } : r
       )
     }))
@@ -362,33 +362,35 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
 
   const validateHours = () => {
     const newErrors: Record<string, string> = {}
-    
+
     if (formData.horaInicio) {
       const { hours: initHours } = parseTime(formData.horaInicio)
       if (initHours < 8 || initHours >= 23) {
         newErrors.horaInicio = "La hora de inicio debe estar entre 08:00 y 23:00"
       }
     }
-    
+
     if (formData.horaTermino) {
       const { hours: termHours } = parseTime(formData.horaTermino)
       if (termHours < 8 || termHours >= 23) {
         newErrors.horaTermino = "La hora de término debe estar entre 08:00 y 23:00"
       }
     }
-    
+
     if (formData.horaInicio && formData.horaTermino) {
       const { hours: initHours, minutes: initMinutes } = parseTime(formData.horaInicio)
       const { hours: termHours, minutes: termMinutes } = parseTime(formData.horaTermino)
-      
+
       const initTimeInMinutes = initHours * 60 + initMinutes
       const termTimeInMinutes = termHours * 60 + termMinutes
-      
+
       if (termTimeInMinutes <= initTimeInMinutes) {
         newErrors.horaTermino = "La hora de término debe ser posterior a la hora de inicio"
+      } else if (termTimeInMinutes - initTimeInMinutes > 20) {
+        newErrors.horaTermino = "La visita no puede durar más de 20 minutos"
       }
     }
-    
+
     return newErrors
   }
 
@@ -403,7 +405,14 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
     if (!formData.turno) newErrors.turno = "Selecciona un turno."
     if (isNaN(idAsignatura)) newErrors.asignatura = "Selecciona una asignatura."
     if (!formData.campoFormativo) newErrors.campoFormativo = "Selecciona un campo formativo."
-    if (!formData.semana) newErrors.semana = "Selecciona la semana."
+    if (!formData.semana) {
+      newErrors.semana = "Ingresa el número de semana."
+    } else {
+      const sem = parseInt(formData.semana)
+      if (isNaN(sem) || sem < 1 || sem > 18) {
+        newErrors.semana = "La semana debe estar entre 1 y 18."
+      }
+    }
     if (!formData.tipoClase) newErrors.tipoClase = "Selecciona el tipo de clase."
     if (!formData.horaPractica) newErrors.horaPractica = "Indica horas de práctica/teoría."
     if (!formData.lugar) newErrors.lugar = "Ingresa el lugar de la visita."
@@ -494,29 +503,29 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
 
   const getMissingEvaluationFields = () => {
     const missing: string[] = []
-    
+
     // 1. Control Docente
     if (!formData.docentePresente) missing.push("1. Control Docente - ¿Docente presente?")
     if (!formData.horarioProgramado) missing.push("1. Control Docente - ¿Horario programado?")
     if (!formData.interaccion) missing.push("1. Control Docente - ¿Interacción?")
-    
+
     // 2. Material Aula Virtual
     if (!formData.materialCargado) missing.push("2. Material Aula Virtual - ¿Cumple?")
-    
+
     // 3. Control de Asistencia
     if (!formData.asistenciaAmbienteCumple) missing.push("3. Control de Asistencia - ¿Control en ambiente?")
     if (!formData.asistenciaIntranetCumple) missing.push("3. Control de Asistencia - ¿Control en intranet?")
-    
+
     // 4. Control del Avance Silabico
     if (!formData.temaCoincideVisita) missing.push("4. Control del Avance Silabico - Tema de la visita")
     if (!formData.temaCoincideAnterior) missing.push("4. Control del Avance Silabico - Tema anterior")
     if (!formData.ingresoAvanceAulaVirtual) missing.push("4. Control del Avance Silabico - Ingreso del avance")
-    
+
     // 5. Guía de Práctica
     if (!formData.temaProgramadoGuia) missing.push("5. Guía de Práctica - Tema programado")
     if (!formData.logroEvidenciado) missing.push("5. Guía de Práctica - Logro evidenciado")
     if (!formData.rubricaEvaluacion) missing.push("5. Guía de Práctica - Rúbrica de evaluación")
-    
+
     return missing
   }
 
@@ -782,8 +791,8 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
               onClick={() => handleStepClick(s.number)}
               className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-                step === s.number 
-                  ? "bg-primary text-primary-foreground" 
+                step === s.number
+                  ? "bg-primary text-primary-foreground"
                   : step > s.number
                     ? "bg-accent/20 text-accent"
                     : "bg-muted text-muted-foreground"
@@ -836,16 +845,15 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
               </div>
               <div className="space-y-2">
                 <Label>Semana N</Label>
-                <Select value={formData.semana} onValueChange={(v) => updateField("semana", v)}>
-                  <SelectTrigger className={cn(errors.semana && "border-destructive focus:border-destructive focus:ring-destructive")}>
-                    <SelectValue placeholder="Semana" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 16 }, (_, i) => (
-                      <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  type="number"
+                  min="1"
+                  max="18"
+                  placeholder="Ej: 5"
+                  value={formData.semana}
+                  onChange={(e) => updateField("semana", e.target.value)}
+                  className={cn(errors.semana && "border-destructive focus:border-destructive focus:ring-destructive")}
+                />
                 {fieldError("semana") && <p className="text-xs text-destructive mt-1">{fieldError("semana")}</p>}
               </div>
             </div>
@@ -902,7 +910,7 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
                   <SelectTrigger className={cn(errors.ciclo && "border-destructive focus:border-destructive focus:ring-destructive")}>
                     <SelectValue placeholder="Ciclo" />
                   </SelectTrigger>
-                {fieldError("ciclo") && <p className="text-xs text-destructive mt-1">{fieldError("ciclo")}</p>}
+                  {fieldError("ciclo") && <p className="text-xs text-destructive mt-1">{fieldError("ciclo")}</p>}
                   <SelectContent>
                     {["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"].map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -1019,7 +1027,7 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
               <div className="mb-4 p-3 bg-muted/50 rounded-lg">
                 <Label className="text-sm text-muted-foreground">Docente:</Label>
                 <Select value={formData.docente} onValueChange={(v) => updateField("docente", v)} disabled={isLoadingData}>
-                  <SelectTrigger className={cn("mt-1", errors.docente && "border-destructive focus:border-destructive focus:ring-destructive") }>
+                  <SelectTrigger className={cn("mt-1", errors.docente && "border-destructive focus:border-destructive focus:ring-destructive")}>
                     <SelectValue placeholder={isLoadingData ? "Cargando..." : "Seleccionar docente"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1484,12 +1492,12 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
               <div className="p-3 bg-muted/50 rounded-lg">
                 <Label className="text-sm text-muted-foreground">Responsable (Auditor):</Label>
                 <p className="font-medium">
-                  {!mounted 
-                    ? "Cargando..." 
-                    : user?.nombre && user?.apellido 
-                      ? `${user.nombre} ${user.apellido}` 
-                      : user?.nombre 
-                        ? user.nombre 
+                  {!mounted
+                    ? "Cargando..."
+                    : user?.nombre && user?.apellido
+                      ? `${user.nombre} ${user.apellido}`
+                      : user?.nombre
+                        ? user.nombre
                         : "Auditor actual"}
                 </p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
@@ -1533,7 +1541,7 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
                   )}
                 </div>
               ))}
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -1633,12 +1641,12 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
                 <div className="flex justify-between py-2">
                   <span className="text-muted-foreground">Responsable (Auditor):</span>
                   <span className="font-medium">
-                    {!mounted 
-                      ? "Cargando..." 
-                      : user?.nombre && user?.apellido 
-                        ? `${user.nombre} ${user.apellido}` 
-                        : user?.nombre 
-                          ? user.nombre 
+                    {!mounted
+                      ? "Cargando..."
+                      : user?.nombre && user?.apellido
+                        ? `${user.nombre} ${user.apellido}`
+                        : user?.nombre
+                          ? user.nombre
                           : "Auditor actual"}
                   </span>
                 </div>
@@ -1675,8 +1683,8 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
 
           {/* Acciones finales */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button 
-              className="flex-1" 
+            <Button
+              className="flex-1"
               disabled={isSubmitting}
               onClick={handleSubmit}
             >

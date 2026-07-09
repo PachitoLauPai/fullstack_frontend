@@ -14,6 +14,7 @@ import { Search, Download, X } from "lucide-react"
 import { sedesService, type Sede } from "@/services/sedes.service"
 import { visitasService } from "@/services/visitas.service"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 export interface VisitasFiltersProps {
   onFiltersChange?: (filters: FiltersState) => void
@@ -23,7 +24,8 @@ export interface FiltersState {
   busqueda: string
   idSede: string
   estado: string
-  fecha: string
+  fechaDesde: string
+  fechaHasta: string
 }
 
 export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
@@ -33,7 +35,8 @@ export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
     busqueda: "",
     idSede: "",
     estado: "",
-    fecha: "",
+    fechaDesde: "",
+    fechaHasta: "",
   })
   const [isExporting, setIsExporting] = useState(false)
 
@@ -67,7 +70,8 @@ export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
       busqueda: "",
       idSede: "",
       estado: "",
-      fecha: "",
+      fechaDesde: "",
+      fechaHasta: "",
     }
     setFilters(emptyFilters)
     onFiltersChange?.(emptyFilters)
@@ -80,8 +84,8 @@ export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
         busqueda: filters.busqueda || null,
         idSede: filters.idSede ? Number(filters.idSede) : null,
         estado: filters.estado || null,
-        fechaDesde: filters.fecha || null,
-        fechaHasta: filters.fecha || null,
+        fechaDesde: filters.fechaDesde || null,
+        fechaHasta: filters.fechaHasta || null,
       }
       const blob = await visitasService.exportarPdf(payload)
       const url = URL.createObjectURL(blob)
@@ -130,13 +134,27 @@ export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
             </Button>
           )}
           <Button
-            variant="outline"
-            size="icon"
+            variant="default"
+            className="flex items-center gap-2 bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] text-white hover:opacity-95 shadow transition-all duration-200 font-medium whitespace-nowrap px-4 cursor-pointer"
             onClick={handleExportPdf}
             disabled={isExporting}
-            title="Exportar PDF con filtros"
+            title={hasActiveFilters ? "Exportar visitas que coinciden con los filtros aplicados" : "Exportar todas las visitas"}
           >
-            <Download className="h-4 w-4" />
+            <Download className={cn("h-4 w-4", isExporting && "animate-bounce")} />
+            <span>
+              {isExporting 
+                ? "Exportando..." 
+                : hasActiveFilters 
+                  ? "Exportar Filtrados" 
+                  : "Exportar Todo (PDF)"
+              }
+            </span>
+            {hasActiveFilters && (
+              <span className="flex h-2 w-2 relative ml-1">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+            )}
           </Button>
         </div>
       </div>
@@ -184,15 +202,29 @@ export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
           </SelectContent>
         </Select>
 
-        {/* Fecha */}
-        <input
-          type="date"
-          className="px-3 py-2 border border-input rounded-md bg-background text-sm w-full md:w-[180px]"
-          placeholder="Fecha"
-          value={filters.fecha}
-          onChange={(e) => handleFilterChange("fecha", e.target.value)}
-          title="Fecha"
-        />
+        {/* Fecha Desde */}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Desde:</span>
+          <input
+            type="date"
+            className="px-3 py-2 border border-input rounded-md bg-background text-sm w-full md:w-[160px]"
+            value={filters.fechaDesde}
+            onChange={(e) => handleFilterChange("fechaDesde", e.target.value)}
+            title="Fecha Desde"
+          />
+        </div>
+
+        {/* Fecha Hasta */}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Hasta:</span>
+          <input
+            type="date"
+            className="px-3 py-2 border border-input rounded-md bg-background text-sm w-full md:w-[160px]"
+            value={filters.fechaHasta}
+            onChange={(e) => handleFilterChange("fechaHasta", e.target.value)}
+            title="Fecha Hasta"
+          />
+        </div>
       </div>
     </div>
   )
