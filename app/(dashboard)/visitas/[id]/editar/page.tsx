@@ -95,7 +95,7 @@ export default function EditarVisitaPage() {
       // Verificar que sea el creador
       const visitaAuditorId = Number(visitaData.idUsuarioAuditor)
       const currentUserId = Number(user?.id)
-      
+
       console.log("Verificando propiedad de visita:", {
         visitaAuditorId,
         currentUserId,
@@ -104,7 +104,7 @@ export default function EditarVisitaPage() {
         userId: user?.id,
         idUsuarioAuditor: visitaData.idUsuarioAuditor
       })
-      
+
       if (visitaAuditorId !== currentUserId) {
         toast.error(`No puedes editar visitas de otros evaluadores (Visita: ${visitaAuditorId}, Tú: ${currentUserId})`)
         router.push(`/visitas/${visitaId}`)
@@ -121,7 +121,7 @@ export default function EditarVisitaPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     try {
       setSaving(true)
       await visitasService.update(visitaId, formData)
@@ -358,4 +358,8 @@ export default function EditarVisitaPage() {
       </form>
     </div>
   )
+}
+
+export function generateStaticParams() {
+  return []; // Le dice a Next.js que no fabrique ningún ID fijo en el build
 }

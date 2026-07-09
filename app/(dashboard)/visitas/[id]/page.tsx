@@ -355,7 +355,7 @@ export default function VisitaDetallePage() {
       {showEvaluaciones && (
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Evaluaciones de la Visita</h2>
-          
+
           <div className="grid gap-4 md:grid-cols-2">
             {/* Evaluación Control Docente */}
             <Card>
@@ -615,8 +615,8 @@ export default function VisitaDetallePage() {
           <DialogHeader>
             <DialogTitle>Firmar Visita</DialogTitle>
             <DialogDescription>
-              {firmaGuardada 
-                ? "¿Deseas usar tu firma guardada para firmar esta visita?" 
+              {firmaGuardada
+                ? "¿Deseas usar tu firma guardada para firmar esta visita?"
                 : "No tienes una firma guardada. Por favor, configura tu firma en tu perfil primero."}
             </DialogDescription>
           </DialogHeader>
@@ -632,7 +632,7 @@ export default function VisitaDetallePage() {
                 Cancelar
               </Button>
               {firmaGuardada ? (
-                <Button 
+                <Button
                   onClick={user?.rol === "DOCENTE" ? confirmarFirmaConFirmaGuardada : confirmarFirmaAuditorConFirmaGuardada}
                   disabled={isSigning}
                 >
@@ -649,4 +649,8 @@ export default function VisitaDetallePage() {
       </Dialog>
     </div>
   )
+}
+
+export function generateStaticParams() {
+  return []; // Le dice a Next.js que no fabrique ningún ID fijo en el build
 }
