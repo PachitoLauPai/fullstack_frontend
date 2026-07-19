@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -58,7 +59,7 @@ export function Sidebar() {
   const { user, logout } = useAuth()
 
   // Filtrar navegacion segun el rol del usuario
-  const filteredNavigation = navigation.filter(item => 
+  const filteredNavigation = navigation.filter(item =>
     user && item.roles.includes(user.rol)
   )
 
@@ -112,8 +113,14 @@ export function Sidebar() {
           "flex items-center h-16 px-4 border-b border-sidebar-border",
           isCollapsed ? "justify-center" : "gap-3"
         )}>
-          <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center flex-shrink-0">
-            <ClipboardCheck className="h-5 w-5 text-sidebar-primary-foreground" />
+          <div className="w-10 h-10 rounded-md overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
+            <Image
+              src="/iconoutp.jpg"
+              alt="Logo UTP"
+              width={40}
+              height={40}
+              className="object-contain w-full h-full"
+            />
           </div>
           {!isCollapsed && (
             <div className="flex flex-col min-w-0">
