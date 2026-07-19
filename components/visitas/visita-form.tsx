@@ -41,7 +41,7 @@ import { visitasService } from "@/services/visitas.service"
 import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
 
-// Componente de evaluacion con opciones SI/NO o CUMPLE/NO CUMPLE
+// Componente de evaluacion con botones toggle estilizados
 interface EvaluacionRadioProps {
   id: string
   label: string
@@ -57,25 +57,81 @@ function EvaluacionRadio({
   onChange,
   options = [{ value: "si", label: "SI" }, { value: "no", label: "NO" }]
 }: EvaluacionRadioProps) {
+  const getOptionStyle = (optValue: string, isSelected: boolean) => {
+    if (!isSelected) return "border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:border-muted-foreground/50"
+    if (optValue === "si" || optValue === "cumple") return "border-2 border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold dark:bg-emerald-950/40 dark:text-emerald-400"
+    if (optValue === "no" || optValue === "no_cumple") return "border-2 border-rose-500 bg-rose-50 text-rose-700 font-semibold dark:bg-rose-950/40 dark:text-rose-400"
+    return "border-2 border-slate-400 bg-slate-50 text-slate-700 font-semibold dark:bg-slate-800 dark:text-slate-300"
+  }
   return (
     <div className="flex items-center justify-between gap-4 p-3 rounded-lg border bg-card">
-      <Label htmlFor={id} className="font-medium flex-1">
-        {label}
-      </Label>
-      <RadioGroup
-        value={value}
-        onValueChange={onChange}
-        className="flex gap-4"
-      >
+      <Label className="font-medium flex-1 text-sm">{label}</Label>
+      <div className="flex gap-2">
         {options.map((opt) => (
-          <div key={opt.value} className="flex items-center gap-1.5">
-            <RadioGroupItem value={opt.value} id={`${id}-${opt.value}`} />
-            <Label htmlFor={`${id}-${opt.value}`} className="text-sm cursor-pointer">
-              {opt.label}
-            </Label>
-          </div>
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-sm transition-all duration-150 cursor-pointer select-none",
+              getOptionStyle(opt.value, value === opt.value)
+            )}
+          >
+            {opt.label}
+          </button>
         ))}
-      </RadioGroup>
+      </div>
+    </div>
+  )
+}
+
+// Componente de fila de evaluacion con botones toggle para tablas
+interface EvalRowProps {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  options: { value: string; label: string; color: "green" | "red" | "gray" }[]
+  striped?: boolean
+  hasError?: boolean
+}
+
+function EvalRow({ label, value, onChange, options, striped, hasError }: EvalRowProps) {
+  const getColorStyle = (color: "green" | "red" | "gray", isSelected: boolean) => {
+    if (!isSelected) return "border border-border bg-background text-muted-foreground hover:bg-muted/50 hover:border-muted-foreground/40"
+    if (color === "green") return "border-2 border-emerald-500 bg-emerald-500 text-white font-semibold shadow-sm"
+    if (color === "red") return "border-2 border-rose-500 bg-rose-500 text-white font-semibold shadow-sm"
+    return "border-2 border-slate-400 bg-slate-500 text-white font-semibold shadow-sm"
+  }
+  const isEmpty = !value
+  const showError = hasError && isEmpty
+  return (
+    <div className={cn(
+      "flex items-center justify-between gap-4 px-4 py-3 transition-colors relative",
+      showError
+        ? "bg-rose-50 dark:bg-rose-950/20 border-l-4 border-l-rose-500"
+        : striped ? "bg-muted/30" : "bg-card"
+    )}>
+      <div className="flex items-center gap-2 flex-1">
+        {showError && (
+          <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+        )}
+        <span className={cn("text-sm leading-snug", showError && "text-rose-700 dark:text-rose-400 font-medium")}>{label}</span>
+      </div>
+      <div className="flex gap-2 shrink-0">
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={cn(
+              "px-3 py-1 rounded-full text-xs transition-all duration-150 cursor-pointer select-none whitespace-nowrap",
+              getColorStyle(opt.color, value === opt.value)
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -1014,20 +1070,55 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
       {/* Step 2: Evaluaciones */}
       {step === 2 && (
         <div className="space-y-6">
-          {/* 1. Control Docente */}
-          <Card>
-            <CardHeader className="bg-primary/5 border-b">
+          {/* Banner de errores */}
+          {Object.keys(errors).length > 0 && (
+            <div className="flex items-start gap-3 p-4 rounded-lg border border-rose-300 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-800">
+              <div className="shrink-0 mt-0.5">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-white text-xs font-bold">{Object.keys(errors).length}</span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-rose-700 dark:text-rose-400">Completa los campos requeridos antes de continuar</p>
+                <p className="text-xs text-rose-600/80 dark:text-rose-500 mt-0.5">Los campos marcados en rojo necesitan una selección.</p>
+              </div>
+            </div>
+          )}
+          {/* 1. Control Docente - Color: Indigo */}
+          <Card className={cn(
+            "transition-all duration-200 border-l-4 border-l-indigo-400",
+            (errors.docente || errors.docentePresente || errors.horarioProgramado || errors.interaccion)
+              && "ring-2 ring-rose-400 dark:ring-rose-600 border-l-rose-400"
+          )}>
+            <CardHeader className={cn(
+              "border-b transition-colors",
+              (errors.docente || errors.docentePresente || errors.horarioProgramado || errors.interaccion)
+                ? "bg-rose-50 dark:bg-rose-950/30"
+                : "bg-indigo-50/60 dark:bg-indigo-950/20"
+            )}>
               <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
+                <User className={cn("h-5 w-5", (errors.docente || errors.docentePresente || errors.horarioProgramado || errors.interaccion) ? "text-rose-500" : "text-indigo-500")} />
                 1. Control Docente (Asistencia, Horario, Comportamiento)
+                {(errors.docente || errors.docentePresente || errors.horarioProgramado || errors.interaccion) && (
+                  <span className="ml-auto text-xs font-normal text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                    Campos requeridos
+                  </span>
+                )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="pt-4 space-y-4">
               {/* Docente */}
-              <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-                <Label className="text-sm text-muted-foreground">Docente:</Label>
+              <div className={cn(
+                "p-3 rounded-lg border transition-colors",
+                errors.docente
+                  ? "bg-rose-50 dark:bg-rose-950/20 border-rose-300 dark:border-rose-700"
+                  : "bg-muted/50 border-transparent"
+              )}>
+                <Label className={cn("text-sm", errors.docente ? "text-rose-700 dark:text-rose-400 font-medium" : "text-muted-foreground")}>
+                  {errors.docente && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block mr-1.5 animate-pulse" />}
+                  Docente:
+                </Label>
                 <Select value={formData.docente} onValueChange={(v) => updateField("docente", v)} disabled={isLoadingData}>
-                  <SelectTrigger className={cn("mt-1", errors.docente && "border-destructive focus:border-destructive focus:ring-destructive")}>
+                  <SelectTrigger className={cn("mt-1", errors.docente && "border-rose-400 focus:border-rose-500 focus:ring-rose-500")}>
                     <SelectValue placeholder={isLoadingData ? "Cargando..." : "Seleccionar docente"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1036,89 +1127,147 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
-                {fieldError("docente") && <p className="text-xs text-destructive mt-1">{fieldError("docente")}</p>}
               </div>
 
-              {/* Tabla de evaluacion docente */}
-              <div className="border rounded-lg overflow-hidden">
-                <div className="grid grid-cols-4 gap-px bg-muted text-sm font-medium">
-                  <div className="bg-primary/10 p-3 text-center">PRESENTE</div>
-                  <div className="bg-primary/10 p-3 text-center">HORARIO PROGRAMADO</div>
-                  <div className="bg-primary/10 p-3 text-center">INTERACCION</div>
-                  <div className="bg-primary/10 p-3 text-center">ACTIVIDAD</div>
+              {/* Controles en cards individuales */}
+              <div className="grid gap-3 sm:grid-cols-3">
+                {/* Presente */}
+                <div className={cn(
+                  "rounded-lg border p-4 space-y-3 transition-colors",
+                  errors.docentePresente
+                    ? "border-rose-400 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-700"
+                    : "border-border"
+                )}>
+                  <p className={cn(
+                    "text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5",
+                    errors.docentePresente ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
+                  )}>
+                    {errors.docentePresente && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />}
+                    Presente
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateField("docentePresente", "si")}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 border",
+                        formData.docentePresente === "si"
+                          ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                          : "bg-background border-border text-muted-foreground hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-700"
+                      )}
+                    >
+                      ✓ SI
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateField("docentePresente", "no")}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 border",
+                        formData.docentePresente === "no"
+                          ? "bg-rose-500 border-rose-500 text-white shadow-sm"
+                          : "bg-background border-border text-muted-foreground hover:bg-rose-50 hover:border-rose-400 hover:text-rose-700"
+                      )}
+                    >
+                      ✗ NO
+                    </button>
+                  </div>
                 </div>
-                <div className="grid grid-cols-4 gap-px bg-muted">
-                  {/* Presente */}
-                  <div className="bg-card p-3">
-                    <RadioGroup
-                      value={formData.docentePresente}
-                      onValueChange={(v) => updateField("docentePresente", v)}
-                      className="flex flex-col gap-2"
+                {/* Horario Programado */}
+                <div className={cn(
+                  "rounded-lg border p-4 space-y-3 transition-colors",
+                  errors.horarioProgramado
+                    ? "border-rose-400 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-700"
+                    : "border-border"
+                )}>
+                  <p className={cn(
+                    "text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5",
+                    errors.horarioProgramado ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
+                  )}>
+                    {errors.horarioProgramado && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />}
+                    Horario Programado
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateField("horarioProgramado", "cumple")}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 border",
+                        formData.horarioProgramado === "cumple"
+                          ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                          : "bg-background border-border text-muted-foreground hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-700"
+                      )}
                     >
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="si" id="presente-si" />
-                        <Label htmlFor="presente-si" className="text-sm cursor-pointer">SI</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="no" id="presente-no" />
-                        <Label htmlFor="presente-no" className="text-sm cursor-pointer">NO</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                  {/* Horario Programado */}
-                  <div className="bg-card p-3">
-                    <RadioGroup
-                      value={formData.horarioProgramado}
-                      onValueChange={(v) => updateField("horarioProgramado", v)}
-                      className="flex flex-col gap-2"
+                      ✓ Cumple
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateField("horarioProgramado", "no_cumple")}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 border",
+                        formData.horarioProgramado === "no_cumple"
+                          ? "bg-rose-500 border-rose-500 text-white shadow-sm"
+                          : "bg-background border-border text-muted-foreground hover:bg-rose-50 hover:border-rose-400 hover:text-rose-700"
+                      )}
                     >
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="cumple" id="horario-cumple" />
-                        <Label htmlFor="horario-cumple" className="text-sm cursor-pointer">Cumple</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="no_cumple" id="horario-no-cumple" />
-                        <Label htmlFor="horario-no-cumple" className="text-sm cursor-pointer">No Cumple</Label>
-                      </div>
-                    </RadioGroup>
+                      ✗ No Cumple
+                    </button>
                   </div>
-                  {/* Interaccion */}
-                  <div className="bg-card p-3">
-                    <RadioGroup
-                      value={formData.interaccion}
-                      onValueChange={(v) => updateField("interaccion", v)}
-                      className="flex flex-col gap-2"
+                </div>
+                {/* Interaccion */}
+                <div className={cn(
+                  "rounded-lg border p-4 space-y-3 transition-colors",
+                  errors.interaccion
+                    ? "border-rose-400 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-700"
+                    : "border-border"
+                )}>
+                  <p className={cn(
+                    "text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5",
+                    errors.interaccion ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
+                  )}>
+                    {errors.interaccion && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />}
+                    Interacción
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateField("interaccion", "si")}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 border",
+                        formData.interaccion === "si"
+                          ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                          : "bg-background border-border text-muted-foreground hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-700"
+                      )}
                     >
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="si" id="interaccion-si" />
-                        <Label htmlFor="interaccion-si" className="text-sm cursor-pointer">SI</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="no" id="interaccion-no" />
-                        <Label htmlFor="interaccion-no" className="text-sm cursor-pointer">NO</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                  {/* Actividad */}
-                  <div className="bg-card p-3">
-                    <Input
-                      placeholder="Describir actividad"
-                      value={formData.actividad}
-                      onChange={(e) => updateField("actividad", e.target.value)}
-                      className={cn("text-sm", errors.actividad && "border-destructive focus:border-destructive focus:ring-destructive")}
-                    />
-                    {fieldError("actividad") && <p className="text-xs text-destructive mt-2">{fieldError("actividad")}</p>}
+                      ✓ SI
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateField("interaccion", "no")}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 border",
+                        formData.interaccion === "no"
+                          ? "bg-rose-500 border-rose-500 text-white shadow-sm"
+                          : "bg-background border-border text-muted-foreground hover:bg-rose-50 hover:border-rose-400 hover:text-rose-700"
+                      )}
+                    >
+                      ✗ NO
+                    </button>
                   </div>
                 </div>
               </div>
-              {(fieldError("docentePresente") || fieldError("horarioProgramado") || fieldError("interaccion")) && (
-                <p className="text-xs text-destructive mt-2">
-                  {fieldError("docentePresente") || fieldError("horarioProgramado") || fieldError("interaccion")}
-                </p>
-              )}
 
-              <div className="mt-4 space-y-2">
-                <Label className="text-sm">Observaciones:</Label>
+              {/* Actividad */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Actividad desarrollada <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                <Input
+                  placeholder="Describir la actividad observada durante la visita..."
+                  value={formData.actividad}
+                  onChange={(e) => updateField("actividad", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Observaciones</Label>
                 <Textarea
                   placeholder="Observaciones del control docente..."
                   value={formData.observacionesDocente}
@@ -1129,25 +1278,69 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
             </CardContent>
           </Card>
 
-          {/* 2. Material Aula Virtual */}
-          <Card>
-            <CardHeader className="bg-primary/5 border-b">
-              <CardTitle className="flex items-center gap-2">
-                <MonitorPlay className="h-5 w-5" />
+          {/* 2. Material Aula Virtual - Color: Purple */}
+          <Card className={cn(
+            "transition-all duration-200 border-l-4 border-l-purple-400",
+            errors.materialCargado && "ring-2 ring-rose-400 dark:ring-rose-600 border-l-rose-400"
+          )}>
+            <CardHeader className={cn(
+              "border-b transition-colors",
+              errors.materialCargado ? "bg-rose-50 dark:bg-rose-950/30" : "bg-purple-50/60 dark:bg-purple-950/20"
+            )}>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <MonitorPlay className={cn("h-5 w-5", errors.materialCargado ? "text-rose-500" : "text-purple-500")} />
                 2. Registro de Material a Utilizar Cargado en Aula Virtual Antes del Inicio de Clases
+                {errors.materialCargado && (
+                  <span className="ml-auto text-xs font-normal text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                    Requerido
+                  </span>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
-              <EvaluacionRadio
-                id="materialCargado"
-                label="CUMPLE"
-                value={formData.materialCargado}
-                onChange={(v) => updateField("materialCargado", v)}
-                options={siNoOptions}
-              />
-              {fieldError("materialCargado") && <p className="text-xs text-destructive mt-2">{fieldError("materialCargado")}</p>}
-              <div className="space-y-2">
-                <Label className="text-sm">Observaciones:</Label>
+              <div className={cn(
+                "rounded-lg border p-4 space-y-3 transition-colors",
+                errors.materialCargado
+                  ? "border-rose-400 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-700"
+                  : "border-border"
+              )}>
+                <p className={cn(
+                  "text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5",
+                  errors.materialCargado ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
+                )}>
+                  {errors.materialCargado && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />}
+                  ¿Cumple con la carga del material?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => updateField("materialCargado", "si")}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 border",
+                      formData.materialCargado === "si"
+                        ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                        : "bg-background border-border text-muted-foreground hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-700"
+                    )}
+                  >
+                    ✓ SI
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateField("materialCargado", "no")}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 border",
+                      formData.materialCargado === "no"
+                        ? "bg-rose-500 border-rose-500 text-white shadow-sm"
+                        : "bg-background border-border text-muted-foreground hover:bg-rose-50 hover:border-rose-400 hover:text-rose-700"
+                    )}
+                  >
+                    ✗ NO
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Observaciones</Label>
                 <Textarea
                   placeholder="Observaciones del material..."
                   value={formData.observacionesMaterial}
@@ -1158,83 +1351,125 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
             </CardContent>
           </Card>
 
-          {/* 3. Control de Registro de Asistencia */}
-          <Card>
-            <CardHeader className="bg-primary/5 border-b">
+          {/* 3. Control de Registro de Asistencia - Color: Teal */}
+          <Card className={cn(
+            "transition-all duration-200 border-l-4 border-l-teal-400",
+            (errors.asistenciaAmbienteCumple || errors.asistenciaIntranetCumple) && "ring-2 ring-rose-400 dark:ring-rose-600 border-l-rose-400"
+          )}>
+            <CardHeader className={cn(
+              "border-b transition-colors",
+              (errors.asistenciaAmbienteCumple || errors.asistenciaIntranetCumple) ? "bg-rose-50 dark:bg-rose-950/30" : "bg-teal-50/60 dark:bg-teal-950/20"
+            )}>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
+                <Users className={cn("h-5 w-5", (errors.asistenciaAmbienteCumple || errors.asistenciaIntranetCumple) ? "text-rose-500" : "text-teal-500")} />
                 3. Control de Registro de Asistencia de Estudiantes
+                {(errors.asistenciaAmbienteCumple || errors.asistenciaIntranetCumple) && (
+                  <span className="ml-auto text-xs font-normal text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                    Campos requeridos
+                  </span>
+                )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
-              {/* Tabla de control de asistencia */}
-              <div className="border rounded-lg overflow-hidden">
-                <div className="grid grid-cols-3 gap-px bg-muted text-sm font-medium">
-                  <div className="bg-primary/10 p-3 text-center">CONTROL</div>
-                  <div className="bg-primary/10 p-3 text-center">CONTROL EN AMBIENTE</div>
-                  <div className="bg-primary/10 p-3 text-center">CONTROL EN INTRANET</div>
-                </div>
-                {/* Fila Asistencia */}
-                <div className="grid grid-cols-3 gap-px bg-muted">
-                  <div className="bg-card p-3 flex items-center font-medium text-sm">
-                    ASISTENCIA
-                  </div>
-                  {/* Control en Ambiente */}
-                  <div className="bg-card p-3">
-                    <RadioGroup
-                      value={formData.asistenciaAmbienteCumple}
-                      onValueChange={(v) => updateField("asistenciaAmbienteCumple", v)}
-                      className="flex gap-4 mb-2"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <RadioGroupItem value="cumple" id="amb-cumple" />
-                        <Label htmlFor="amb-cumple" className="text-xs cursor-pointer">Cumple</Label>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <RadioGroupItem value="no_cumple" id="amb-no-cumple" />
-                        <Label htmlFor="amb-no-cumple" className="text-xs cursor-pointer">No Cumple</Label>
-                      </div>
-                    </RadioGroup>
-                    <Input
-                      placeholder="Observaciones"
-                      value={formData.asistenciaAmbienteObs}
-                      onChange={(e) => updateField("asistenciaAmbienteObs", e.target.value)}
-                      className="text-xs h-8"
-                    />
-                  </div>
-                  {/* Control en Intranet */}
-                  <div className="bg-card p-3">
-                    <RadioGroup
-                      value={formData.asistenciaIntranetCumple}
-                      onValueChange={(v) => updateField("asistenciaIntranetCumple", v)}
-                      className="flex gap-4 mb-2"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <RadioGroupItem value="cumple" id="intra-cumple" />
-                        <Label htmlFor="intra-cumple" className="text-xs cursor-pointer">Cumple</Label>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <RadioGroupItem value="no_cumple" id="intra-no-cumple" />
-                        <Label htmlFor="intra-no-cumple" className="text-xs cursor-pointer">No Cumple</Label>
-                      </div>
-                    </RadioGroup>
-                    <Input
-                      placeholder="Observaciones"
-                      value={formData.asistenciaIntranetObs}
-                      onChange={(e) => updateField("asistenciaIntranetObs", e.target.value)}
-                      className="text-xs h-8"
-                    />
-                  </div>
-                </div>
-                {(fieldError("asistenciaAmbienteCumple") || fieldError("asistenciaIntranetCumple")) && (
-                  <p className="text-xs text-destructive mt-2">
-                    {fieldError("asistenciaAmbienteCumple") || fieldError("asistenciaIntranetCumple")}
+            <CardContent className="pt-4 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/* Control en Ambiente */}
+                <div className={cn(
+                  "rounded-lg border p-4 space-y-3 transition-colors",
+                  errors.asistenciaAmbienteCumple
+                    ? "border-rose-400 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-700"
+                    : "border-border"
+                )}>
+                  <p className={cn(
+                    "text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5",
+                    errors.asistenciaAmbienteCumple ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
+                  )}>
+                    {errors.asistenciaAmbienteCumple && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />}
+                    Control en Ambiente
                   </p>
-                )}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateField("asistenciaAmbienteCumple", "cumple")}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 border",
+                        formData.asistenciaAmbienteCumple === "cumple"
+                          ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                          : "bg-background border-border text-muted-foreground hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-700"
+                      )}
+                    >
+                      ✓ Cumple
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateField("asistenciaAmbienteCumple", "no_cumple")}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 border",
+                        formData.asistenciaAmbienteCumple === "no_cumple"
+                          ? "bg-rose-500 border-rose-500 text-white shadow-sm"
+                          : "bg-background border-border text-muted-foreground hover:bg-rose-50 hover:border-rose-400 hover:text-rose-700"
+                      )}
+                    >
+                      ✗ No Cumple
+                    </button>
+                  </div>
+                  <Input
+                    placeholder="Observaciones del ambiente..."
+                    value={formData.asistenciaAmbienteObs}
+                    onChange={(e) => updateField("asistenciaAmbienteObs", e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
+                {/* Control en Intranet */}
+                <div className={cn(
+                  "rounded-lg border p-4 space-y-3 transition-colors",
+                  errors.asistenciaIntranetCumple
+                    ? "border-rose-400 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-700"
+                    : "border-border"
+                )}>
+                  <p className={cn(
+                    "text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5",
+                    errors.asistenciaIntranetCumple ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
+                  )}>
+                    {errors.asistenciaIntranetCumple && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />}
+                    Control en Intranet
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateField("asistenciaIntranetCumple", "cumple")}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 border",
+                        formData.asistenciaIntranetCumple === "cumple"
+                          ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                          : "bg-background border-border text-muted-foreground hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-700"
+                      )}
+                    >
+                      ✓ Cumple
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateField("asistenciaIntranetCumple", "no_cumple")}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 border",
+                        formData.asistenciaIntranetCumple === "no_cumple"
+                          ? "bg-rose-500 border-rose-500 text-white shadow-sm"
+                          : "bg-background border-border text-muted-foreground hover:bg-rose-50 hover:border-rose-400 hover:text-rose-700"
+                      )}
+                    >
+                      ✗ No Cumple
+                    </button>
+                  </div>
+                  <Input
+                    placeholder="Observaciones de intranet..."
+                    value={formData.asistenciaIntranetObs}
+                    onChange={(e) => updateField("asistenciaIntranetObs", e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
               </div>
-
-              <div className="mt-4 space-y-2">
-                <Label className="text-sm">Observaciones Generales:</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Observaciones Generales</Label>
                 <Textarea
                   placeholder="Observaciones del control de asistencia..."
                   value={formData.observacionesAsistencia}
@@ -1245,246 +1480,148 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
             </CardContent>
           </Card>
 
-          {/* 4. Control del Avance Silabico */}
-          <Card>
-            <CardHeader className="bg-primary/5 border-b">
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                4. Control del Avance Silabico
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="border rounded-lg overflow-hidden">
-                <div className="grid grid-cols-3 gap-px bg-muted text-sm font-medium">
-                  <div className="bg-primary/10 p-3 col-span-1"></div>
-                  <div className="bg-primary/10 p-3 text-center">CUMPLE</div>
-                  <div className="bg-primary/10 p-3 text-center">NO CUMPLE</div>
+          {/* 4. Control del Avance Silabico - Color: Amber */}
+          {(() => {
+            const avanceHasError = !!(errors.temaCoincideVisita || errors.temaCoincideAnterior || errors.ingresoAvanceAulaVirtual)
+            return (
+            <Card className={cn("transition-all duration-200 border-l-4 border-l-amber-400", avanceHasError && "ring-2 ring-rose-400 dark:ring-rose-600 border-l-rose-400")}>
+              <CardHeader className={cn("border-b transition-colors", avanceHasError ? "bg-rose-50 dark:bg-rose-950/30" : "bg-amber-50/60 dark:bg-amber-950/20")}>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className={cn("h-5 w-5", avanceHasError ? "text-rose-500" : "text-amber-500")} />
+                  4. Control del Avance Silabico
+                  {avanceHasError && (
+                    <span className="ml-auto text-xs font-normal text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                      Campos requeridos
+                    </span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-2">
+                <div className={cn("rounded-lg border overflow-hidden divide-y", avanceHasError && "border-rose-300 dark:border-rose-700")}>
+                  <EvalRow
+                    label="El tema del silabo coincide con la clase desarrollada en la fecha de la visita"
+                    value={formData.temaCoincideVisita}
+                    onChange={(v) => updateField("temaCoincideVisita", v)}
+                    hasError={!!errors.temaCoincideVisita}
+                    options={[
+                      { value: "cumple", label: "✓ Cumple", color: "green" },
+                      { value: "no_cumple", label: "✗ No Cumple", color: "red" }
+                    ]}
+                  />
+                  <EvalRow
+                    label="El tema desarrollado en la fecha anterior a la visita coincide con el silabo"
+                    value={formData.temaCoincideAnterior}
+                    onChange={(v) => updateField("temaCoincideAnterior", v)}
+                    striped
+                    hasError={!!errors.temaCoincideAnterior}
+                    options={[
+                      { value: "cumple", label: "✓ Cumple", color: "green" },
+                      { value: "no_cumple", label: "✗ No Cumple", color: "red" }
+                    ]}
+                  />
+                  <EvalRow
+                    label="Ingreso del avance silabico en el aula virtual"
+                    value={formData.ingresoAvanceAulaVirtual}
+                    onChange={(v) => updateField("ingresoAvanceAulaVirtual", v)}
+                    hasError={!!errors.ingresoAvanceAulaVirtual}
+                    options={[
+                      { value: "cumple", label: "✓ Cumple", color: "green" },
+                      { value: "no_cumple", label: "✗ No Cumple", color: "red" }
+                    ]}
+                  />
                 </div>
-                {/* Item 1 */}
-                <div className="grid grid-cols-3 gap-px bg-muted">
-                  <div className="bg-card p-3 text-sm">
-                    El tema del silabo coincide con la clase desarrollada en la fecha de la visita
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.temaCoincideVisita}
-                      onValueChange={(v) => updateField("temaCoincideVisita", v)}
-                      className="flex gap-4"
-                    >
-                      <RadioGroupItem value="cumple" id="tema-visita-cumple" />
-                    </RadioGroup>
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.temaCoincideVisita}
-                      onValueChange={(v) => updateField("temaCoincideVisita", v)}
-                      className="flex gap-4"
-                    >
-                      <RadioGroupItem value="no_cumple" id="tema-visita-no" />
-                    </RadioGroup>
-                  </div>
+                <div className="space-y-1.5 pt-2">
+                  <Label className="text-sm font-medium">Observaciones</Label>
+                  <Textarea
+                    placeholder="Observaciones del avance silabico..."
+                    value={formData.observacionesAvance}
+                    onChange={(e) => updateField("observacionesAvance", e.target.value)}
+                    className="min-h-[60px]"
+                  />
                 </div>
-                {/* Item 2 */}
-                <div className="grid grid-cols-3 gap-px bg-muted">
-                  <div className="bg-card p-3 text-sm">
-                    El tema desarrollado en la fecha anterior a la visita coincide con el silabo
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.temaCoincideAnterior}
-                      onValueChange={(v) => updateField("temaCoincideAnterior", v)}
-                      className="flex gap-4"
-                    >
-                      <RadioGroupItem value="cumple" id="tema-ant-cumple" />
-                    </RadioGroup>
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.temaCoincideAnterior}
-                      onValueChange={(v) => updateField("temaCoincideAnterior", v)}
-                      className="flex gap-4"
-                    >
-                      <RadioGroupItem value="no_cumple" id="tema-ant-no" />
-                    </RadioGroup>
-                  </div>
-                </div>
-                {/* Item 3 */}
-                <div className="grid grid-cols-3 gap-px bg-muted">
-                  <div className="bg-card p-3 text-sm">
-                    Ingreso del avance silabico en el aula virtual
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.ingresoAvanceAulaVirtual}
-                      onValueChange={(v) => updateField("ingresoAvanceAulaVirtual", v)}
-                      className="flex gap-4"
-                    >
-                      <RadioGroupItem value="cumple" id="avance-cumple" />
-                    </RadioGroup>
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.ingresoAvanceAulaVirtual}
-                      onValueChange={(v) => updateField("ingresoAvanceAulaVirtual", v)}
-                      className="flex gap-4"
-                    >
-                      <RadioGroupItem value="no_cumple" id="avance-no" />
-                    </RadioGroup>
-                  </div>
-                </div>
-              </div>
+              </CardContent>
+            </Card>
+            )
+          })()}
 
-              <div className="mt-4 space-y-2">
-                <Label className="text-sm">Observaciones:</Label>
-                <Textarea
-                  placeholder="Observaciones del avance silabico..."
-                  value={formData.observacionesAvance}
-                  onChange={(e) => updateField("observacionesAvance", e.target.value)}
-                  className="min-h-[60px]"
-                />
-              </div>
-              {(fieldError("temaCoincideVisita") || fieldError("temaCoincideAnterior") || fieldError("ingresoAvanceAulaVirtual")) && (
-                <p className="text-xs text-destructive mt-2">
-                  {fieldError("temaCoincideVisita") || fieldError("temaCoincideAnterior") || fieldError("ingresoAvanceAulaVirtual")}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* 5. Guia de Practica */}
-          <Card>
-            <CardHeader className="bg-primary/5 border-b">
-              <CardTitle className="flex items-center gap-2">
-                <FlaskConical className="h-5 w-5" />
-                5. Cumple con el Desarrollo de la Guia de Practica
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="border rounded-lg overflow-hidden">
-                <div className="grid grid-cols-4 gap-px bg-muted text-sm font-medium">
-                  <div className="bg-primary/10 p-3"></div>
-                  <div className="bg-primary/10 p-3 text-center">CUMPLE</div>
-                  <div className="bg-primary/10 p-3 text-center">NO CUMPLE</div>
-                  <div className="bg-primary/10 p-3 text-center">NO APLICA</div>
+          {/* 5. Guia de Practica - Color: Emerald */}
+          {(() => {
+            const guiaHasError = !!(errors.temaProgramadoGuia || errors.logroEvidenciado || errors.rubricaEvaluacion)
+            return (
+            <Card className={cn("transition-all duration-200 border-l-4 border-l-emerald-400", guiaHasError && "ring-2 ring-rose-400 dark:ring-rose-600 border-l-rose-400")}>
+              <CardHeader className={cn("border-b transition-colors", guiaHasError ? "bg-rose-50 dark:bg-rose-950/30" : "bg-emerald-50/60 dark:bg-emerald-950/20")}>
+                <CardTitle className="flex items-center gap-2">
+                  <FlaskConical className={cn("h-5 w-5", guiaHasError ? "text-rose-500" : "text-emerald-500")} />
+                  5. Cumple con el Desarrollo de la Guia de Practica
+                  {guiaHasError && (
+                    <span className="ml-auto text-xs font-normal text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                      Campos requeridos
+                    </span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-2">
+                <div className={cn("rounded-lg border overflow-hidden divide-y", guiaHasError && "border-rose-300 dark:border-rose-700")}>
+                  <EvalRow
+                    label="Cumple con el tema programado en la guia de practica para el desarrollo de la clase practica"
+                    value={formData.temaProgramadoGuia}
+                    onChange={(v) => updateField("temaProgramadoGuia", v)}
+                    hasError={!!errors.temaProgramadoGuia}
+                    options={[
+                      { value: "cumple", label: "✓ Cumple", color: "green" },
+                      { value: "no_cumple", label: "✗ No Cumple", color: "red" },
+                      { value: "no_aplica", label: "— No Aplica", color: "gray" }
+                    ]}
+                  />
+                  <EvalRow
+                    label="Se evidencia el logro a medir en la practica desarrollada"
+                    value={formData.logroEvidenciado}
+                    onChange={(v) => updateField("logroEvidenciado", v)}
+                    striped
+                    hasError={!!errors.logroEvidenciado}
+                    options={[
+                      { value: "cumple", label: "✓ Cumple", color: "green" },
+                      { value: "no_cumple", label: "✗ No Cumple", color: "red" },
+                      { value: "no_aplica", label: "— No Aplica", color: "gray" }
+                    ]}
+                  />
+                  <EvalRow
+                    label="Cuenta con una rubrica de evaluacion"
+                    value={formData.rubricaEvaluacion}
+                    onChange={(v) => updateField("rubricaEvaluacion", v)}
+                    hasError={!!errors.rubricaEvaluacion}
+                    options={[
+                      { value: "cumple", label: "✓ Cumple", color: "green" },
+                      { value: "no_cumple", label: "✗ No Cumple", color: "red" },
+                      { value: "no_aplica", label: "— No Aplica", color: "gray" }
+                    ]}
+                  />
                 </div>
-                {/* Item 1 */}
-                <div className="grid grid-cols-4 gap-px bg-muted">
-                  <div className="bg-card p-3 text-sm">
-                    Cumple con el tema programado en la guia de practica para el desarrollo de la clase practica
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.temaProgramadoGuia}
-                      onValueChange={(v) => updateField("temaProgramadoGuia", v)}
-                    >
-                      <RadioGroupItem value="cumple" id="guia1-cumple" />
-                    </RadioGroup>
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.temaProgramadoGuia}
-                      onValueChange={(v) => updateField("temaProgramadoGuia", v)}
-                    >
-                      <RadioGroupItem value="no_cumple" id="guia1-no" />
-                    </RadioGroup>
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.temaProgramadoGuia}
-                      onValueChange={(v) => updateField("temaProgramadoGuia", v)}
-                    >
-                      <RadioGroupItem value="no_aplica" id="guia1-na" />
-                    </RadioGroup>
-                  </div>
+                <div className="space-y-1.5 pt-2">
+                  <Label className="text-sm font-medium">Observaciones</Label>
+                  <Textarea
+                    placeholder="Observaciones de la guia de practica..."
+                    value={formData.observacionesGuia}
+                    onChange={(e) => updateField("observacionesGuia", e.target.value)}
+                    className="min-h-[60px]"
+                  />
                 </div>
-                {/* Item 2 */}
-                <div className="grid grid-cols-4 gap-px bg-muted">
-                  <div className="bg-card p-3 text-sm">
-                    Se evidencia el logro a medir en la practica desarrollada
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.logroEvidenciado}
-                      onValueChange={(v) => updateField("logroEvidenciado", v)}
-                    >
-                      <RadioGroupItem value="cumple" id="guia2-cumple" />
-                    </RadioGroup>
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.logroEvidenciado}
-                      onValueChange={(v) => updateField("logroEvidenciado", v)}
-                    >
-                      <RadioGroupItem value="no_cumple" id="guia2-no" />
-                    </RadioGroup>
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.logroEvidenciado}
-                      onValueChange={(v) => updateField("logroEvidenciado", v)}
-                    >
-                      <RadioGroupItem value="no_aplica" id="guia2-na" />
-                    </RadioGroup>
-                  </div>
-                </div>
-                {/* Item 3 */}
-                <div className="grid grid-cols-4 gap-px bg-muted">
-                  <div className="bg-card p-3 text-sm">
-                    Cuenta con una rubrica de evaluacion
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.rubricaEvaluacion}
-                      onValueChange={(v) => updateField("rubricaEvaluacion", v)}
-                    >
-                      <RadioGroupItem value="cumple" id="guia3-cumple" />
-                    </RadioGroup>
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.rubricaEvaluacion}
-                      onValueChange={(v) => updateField("rubricaEvaluacion", v)}
-                    >
-                      <RadioGroupItem value="no_cumple" id="guia3-no" />
-                    </RadioGroup>
-                  </div>
-                  <div className="bg-card p-3 flex justify-center">
-                    <RadioGroup
-                      value={formData.rubricaEvaluacion}
-                      onValueChange={(v) => updateField("rubricaEvaluacion", v)}
-                    >
-                      <RadioGroupItem value="no_aplica" id="guia3-na" />
-                    </RadioGroup>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 space-y-2">
-                <Label className="text-sm">Observaciones:</Label>
-                <Textarea
-                  placeholder="Observaciones de la guia de practica..."
-                  value={formData.observacionesGuia}
-                  onChange={(e) => updateField("observacionesGuia", e.target.value)}
-                  className="min-h-[60px]"
-                />
-              </div>
-              {(fieldError("temaProgramadoGuia") || fieldError("logroEvidenciado") || fieldError("rubricaEvaluacion")) && (
-                <p className="text-xs text-destructive mt-2">
-                  {fieldError("temaProgramadoGuia") || fieldError("logroEvidenciado") || fieldError("rubricaEvaluacion")}
-                </p>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            )
+          })()}
         </div>
       )}
 
       {/* Step 3: Responsable y Requerimientos */}
       {step === 3 && (
         <div className="space-y-6">
-          <Card>
-            <CardHeader className="bg-primary/5 border-b">
+          <Card className="border-l-4 border-l-slate-400">
+            <CardHeader className="bg-slate-50/60 dark:bg-slate-900/30 border-b">
               <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
+                <User className="h-5 w-5 text-slate-500" />
                 Responsable de Realizar la Actividad
               </CardTitle>
             </CardHeader>
@@ -1505,10 +1642,10 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="bg-primary/5 border-b">
+          <Card className="border-l-4 border-l-orange-400">
+            <CardHeader className="bg-orange-50/60 dark:bg-orange-950/20 border-b">
               <CardTitle className="flex items-center gap-2">
-                <ClipboardCheck className="h-5 w-5" />
+                <ClipboardCheck className="h-5 w-5 text-orange-500" />
                 Requerimientos Solicitados en la Visita Inopinada
               </CardTitle>
               <CardDescription>
@@ -1554,10 +1691,10 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="bg-primary/5 border-b">
+          <Card className="border-l-4 border-l-sky-400">
+            <CardHeader className="bg-sky-50/60 dark:bg-sky-950/20 border-b">
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+                <FileText className="h-5 w-5 text-sky-500" />
                 Evidencia Visual de la Visita
               </CardTitle>
               <CardDescription>
@@ -1593,10 +1730,10 @@ export function VisitaForm({ onDirtyChange }: VisitaFormProps) {
       {/* Step 4: Resumen y Envio */}
       {step === 4 && (
         <div className="space-y-6">
-          <Card>
-            <CardHeader className="bg-primary/5 border-b">
+          <Card className="border-l-4 border-l-violet-400">
+            <CardHeader className="bg-violet-50/60 dark:bg-violet-950/20 border-b">
               <CardTitle className="flex items-center gap-2">
-                <Send className="h-5 w-5" />
+                <Send className="h-5 w-5 text-violet-500" />
                 Resumen de la Visita
               </CardTitle>
               <CardDescription>
