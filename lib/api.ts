@@ -1,7 +1,7 @@
 import axios from "axios"
 import { toast } from "sonner"
 
-let API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
+let API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://sistema-visitas-backend.onrender.com/api"
 if (API_BASE_URL.endsWith("/")) {
   API_BASE_URL = API_BASE_URL.slice(0, -1);
 }
@@ -11,7 +11,7 @@ if (!API_BASE_URL.endsWith("/api")) {
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
