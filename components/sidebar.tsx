@@ -43,8 +43,8 @@ const navigation: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "AUDITOR", "DOCENTE"] },
   { name: "Visitas", href: "/visitas", icon: ClipboardCheck, roles: ["ADMIN", "AUDITOR", "DOCENTE"] },
   { name: "Requerimientos", href: "/requerimientos", icon: AlertCircle, roles: ["DOCENTE"] },
-  { name: "Docentes", href: "/docentes", icon: Users, roles: ["AUDITOR", "ADMIN"] },
-  { name: "Responsables", href: "/responsables", icon: UserCheck, roles: ["ADMIN"] },
+  { name: "Docentes", href: "/docentes", icon: Users, roles: ["AUDITOR"] },
+  { name: "Responsables", href: "/responsables", icon: UserCheck, roles: [] },
   { name: "Asignaturas", href: "/asignaturas", icon: BookOpen, roles: ["ADMIN"] },
   { name: "Sedes", href: "/sedes", icon: Building2, roles: ["ADMIN"] },
   { name: "Reportes", href: "/reportes", icon: FileBarChart, roles: ["ADMIN"] },
@@ -103,29 +103,29 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-40 h-screen bg-sidebar text-sidebar-foreground transition-all duration-300 flex flex-col",
+          "fixed top-0 left-0 z-40 h-screen bg-gradient-to-b from-[#0a1128] via-[#0f1d43] to-[#0a1128] text-white border-r border-[#1e293b]/40 transition-all duration-300 flex flex-col",
           isCollapsed ? "w-16" : "w-64",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
         {/* Logo */}
         <div className={cn(
-          "flex items-center h-16 px-4 border-b border-sidebar-border",
+          "flex items-center h-16 px-4 border-b border-[#1e293b]/40",
           isCollapsed ? "justify-center" : "gap-3"
         )}>
-          <div className="w-10 h-10 rounded-md overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-white border-2 border-slate-100/10 shadow-sm flex items-center justify-center p-1">
             <Image
               src="/iconoutp.jpg"
               alt="Logo UTP"
-              width={40}
-              height={40}
-              className="object-contain w-full h-full"
+              width={32}
+              height={32}
+              className="object-contain w-full h-full rounded-full"
             />
           </div>
           {!isCollapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="font-semibold text-sm truncate">Visitas Inopinadas</span>
-              <span className="text-xs text-sidebar-foreground/60 truncate">Sistema de Control</span>
+              <span className="font-bold text-sm tracking-wide text-white">Visitas Inopinadas</span>
+              <span className="text-[10px] font-semibold tracking-wider text-[#ff003c] uppercase">Sistema de Control</span>
             </div>
           )}
         </div>
@@ -140,15 +140,18 @@ export function Sidebar() {
                 href={item.href}
                 onClick={() => setIsMobileOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
                   isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-                  isCollapsed && "justify-center px-2"
+                    ? "bg-gradient-to-r from-[#ff003c]/20 to-[#ff003c]/2 text-white border-l-4 border-[#ff003c]"
+                    : "text-slate-300 hover:bg-slate-800/40 hover:text-white",
+                  isCollapsed && "justify-center px-2 border-l-0"
                 )}
                 title={isCollapsed ? item.name : undefined}
               >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <item.icon className={cn(
+                  "h-5 w-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110",
+                  isActive ? "text-[#ff003c]" : "text-slate-400 group-hover:text-white"
+                )} />
                 {!isCollapsed && <span>{item.name}</span>}
               </Link>
             )
@@ -156,13 +159,13 @@ export function Sidebar() {
         </nav>
 
         {/* Collapse button - desktop only */}
-        <div className="hidden lg:block p-2 border-t border-sidebar-border">
+        <div className="hidden lg:block p-2 border-t border-[#1e293b]/40">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsCollapsed(!isCollapsed)}
             className={cn(
-              "w-full text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+              "w-full text-slate-300 hover:text-white hover:bg-slate-800/40",
               isCollapsed && "px-2"
             )}
           >
@@ -176,29 +179,29 @@ export function Sidebar() {
 
         {/* User info with dropdown */}
         <div className={cn(
-          "p-4 border-t border-sidebar-border",
+          "p-4 border-t border-[#1e293b]/40",
           isCollapsed && "px-2"
         )}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 className={cn(
-                  "flex items-center gap-3 w-full rounded-lg p-2 hover:bg-sidebar-accent/50 transition-colors text-left",
+                  "flex items-center gap-3 w-full rounded-lg p-2 hover:bg-slate-800/40 transition-colors text-left",
                   isCollapsed && "justify-center"
                 )}
               >
-                <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-medium">
+                <div className="w-8 h-8 rounded-full bg-slate-800/80 border border-slate-700/50 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs font-semibold text-white">
                     {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
                   </span>
                 </div>
                 {!isCollapsed && (
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-sm font-medium truncate">
+                    <span className="text-sm font-semibold truncate text-white">
                       {user?.nombre} {user?.apellido}
                     </span>
                     <span className={cn(
-                      "text-xs px-1.5 py-0.5 rounded w-fit",
+                      "text-[10px] font-bold px-1.5 py-0.5 rounded w-fit uppercase tracking-wider",
                       getRoleBadgeColor(user?.rol || "DOCENTE")
                     )}>
                       {getRoleLabel(user?.rol || "DOCENTE")}
@@ -207,22 +210,22 @@ export function Sidebar() {
                 )}
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 bg-[#0a1128] border border-[#1e293b]/60 text-white">
               <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">{user?.nombre} {user?.apellido}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+                <p className="text-sm font-semibold">{user?.nombre} {user?.apellido}</p>
+                <p className="text-xs text-slate-400 truncate">{user?.email}</p>
               </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
+              <DropdownMenuSeparator className="bg-[#1e293b]/60" />
+              <DropdownMenuItem asChild className="focus:bg-slate-800 focus:text-white">
                 <Link href="/perfil" className="cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
                   Mi Perfil
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
+              <DropdownMenuSeparator className="bg-[#1e293b]/60" />
+              <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
-                Cerrar Sesion
+                Cerrar Sesión
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

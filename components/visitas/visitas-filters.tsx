@@ -112,10 +112,10 @@ export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Search */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
             placeholder="Buscar por docente, asignatura o ID..."
-            className="pl-10"
+            className="pl-10 bg-slate-50/60 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800 focus-visible:bg-white dark:focus-visible:bg-slate-900/60 focus-visible:border-[#0066ff] focus-visible:ring-[#0066ff]/20 h-10 transition-all text-slate-700 dark:text-slate-200"
             value={filters.busqueda}
             onChange={(e) => handleFilterChange("busqueda", e.target.value)}
           />
@@ -128,6 +128,7 @@ export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
               variant="outline"
               size="icon"
               onClick={handleReset}
+              className="h-10 w-10 text-slate-500 border-slate-200"
               title="Limpiar filtros"
             >
               <X className="h-4 w-4" />
@@ -135,7 +136,7 @@ export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
           )}
           <Button
             variant="default"
-            className="flex items-center gap-2 bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] text-white hover:opacity-95 shadow transition-all duration-200 font-medium whitespace-nowrap px-4 cursor-pointer"
+            className="flex items-center gap-2 bg-gradient-to-r from-[#0066ff] to-[#0052cc] text-white hover:opacity-95 shadow transition-all duration-200 font-medium whitespace-nowrap px-4 h-10 cursor-pointer"
             onClick={handleExportPdf}
             disabled={isExporting}
             title={hasActiveFilters ? "Exportar visitas que coinciden con los filtros aplicados" : "Exportar todas las visitas"}
@@ -166,7 +167,7 @@ export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
           value={filters.idSede ? filters.idSede : "all"}
           onValueChange={(value) => handleFilterChange("idSede", value)}
         >
-          <SelectTrigger className="w-full md:w-[180px]">
+          <SelectTrigger className="w-full md:w-[180px] bg-slate-50/60 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800 h-10 text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900/60 focus:ring-[#0066ff]/20 focus:border-[#0066ff] transition-all">
             <SelectValue placeholder="Sede" />
           </SelectTrigger>
           <SelectContent>
@@ -190,7 +191,7 @@ export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
           value={filters.estado ? filters.estado : "all"}
           onValueChange={(value) => handleFilterChange("estado", value)}
         >
-          <SelectTrigger className="w-full md:w-[180px]">
+          <SelectTrigger className="w-full md:w-[180px] bg-slate-50/60 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800 h-10 text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900/60 focus:ring-[#0066ff]/20 focus:border-[#0066ff] transition-all">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
@@ -204,10 +205,10 @@ export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
 
         {/* Fecha Desde */}
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">Desde:</span>
+          <span className="text-sm font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">Desde:</span>
           <input
             type="date"
-            className="px-3 py-2 border border-input rounded-md bg-background text-sm w-full md:w-[160px]"
+            className="px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-md bg-slate-50/60 dark:bg-slate-900/20 text-sm w-full md:w-[160px] text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0066ff] focus:ring-2 focus:ring-[#0066ff]/10 focus:bg-white transition-all"
             value={filters.fechaDesde}
             onChange={(e) => handleFilterChange("fechaDesde", e.target.value)}
             title="Fecha Desde"
@@ -216,10 +217,10 @@ export function VisitasFilters({ onFiltersChange }: VisitasFiltersProps) {
 
         {/* Fecha Hasta */}
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">Hasta:</span>
+          <span className="text-sm font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">Hasta:</span>
           <input
             type="date"
-            className="px-3 py-2 border border-input rounded-md bg-background text-sm w-full md:w-[160px]"
+            className="px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-md bg-slate-50/60 dark:bg-slate-900/20 text-sm w-full md:w-[160px] text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0066ff] focus:ring-2 focus:ring-[#0066ff]/10 focus:bg-white transition-all"
             value={filters.fechaHasta}
             onChange={(e) => handleFilterChange("fechaHasta", e.target.value)}
             title="Fecha Hasta"

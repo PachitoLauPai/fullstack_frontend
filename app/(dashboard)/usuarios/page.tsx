@@ -52,7 +52,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { usuariosService, type Usuario } from "@/services/usuarios.service"
 import { docentesService, type Docente } from "@/services/docentes.service"
 import { responsablesService, type Responsable } from "@/services/responsables.service"
@@ -90,8 +90,8 @@ const initialFormState = {
   email: "",
   password: "",
   rol: "",
-  id_docente: "",
-  id_responsable: "",
+  dni: "",
+  cargo: "",
   estado: true,
 }
 
@@ -104,7 +104,6 @@ export default function UsuariosPage() {
 }
 
 function UsuariosContent() {
-  const { toast } = useToast()
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [docentes, setDocentes] = useState<Docente[]>([])
   const [responsables, setResponsables] = useState<Responsable[]>([])
@@ -116,6 +115,7 @@ function UsuariosContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null)
   const [formData, setFormData] = useState({ ...initialFormState })
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -133,18 +133,14 @@ function UsuariosContent() {
         setResponsables(responsablesData)
       } catch (error) {
         console.error("Error cargando usuarios, docentes o responsables:", error)
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los usuarios, docentes o responsables.",
-          variant: "destructive",
-        })
+        toast.error("No se pudieron cargar los usuarios, docentes o responsables.")
       } finally {
         setLoading(false)
       }
     }
 
     loadData()
-  }, [toast])
+  }, [])
 
   const resetForm = () => {
     setFormData({ ...initialFormState })
@@ -166,32 +162,19 @@ function UsuariosContent() {
     setFormData((prev) => ({
       ...prev,
       rol: valor,
-      id_docente: valor === "DOCENTE" ? prev.id_docente : "",
-      id_responsable: valor === "AUDITOR" ? prev.id_responsable : "",
+      cargo: valor === "AUDITOR" ? prev.cargo : "",
     }))
   }
 
   const buildUsuarioPayload = (isUpdate = false) => {
-    const idDocente = formData.rol === "DOCENTE"
-      ? formData.id_docente
-        ? Number(formData.id_docente)
-        : null
-      : null
-
-    const idResponsable = formData.rol === "AUDITOR"
-      ? formData.id_responsable
-        ? Number(formData.id_responsable)
-        : null
-      : null
-
     return {
       email: formData.email,
       nombres: formData.nombres,
       apellidos: formData.apellidos,
       password: formData.password || undefined,
       idRol: roleIdByValue[formData.rol as RoleValue],
-      idDocente,
-      idResponsable,
+      dni: formData.dni || undefined,
+      cargo: formData.rol === "AUDITOR" ? formData.cargo : undefined,
       estado: isUpdate ? formData.estado : undefined,
     }
   }
@@ -200,44 +183,45 @@ function UsuariosContent() {
     event.preventDefault()
 
     if (!formData.nombres || !formData.apellidos || !formData.email || !formData.rol) {
-      toast({
-        title: "Error",
-        description: "Completa nombres, apellidos, correo y rol.",
-        variant: "destructive",
-      })
+      toast.error("Completa nombres, apellidos, correo y rol.")
       return
     }
 
-    if (formData.rol === "DOCENTE" && !formData.id_docente) {
-      toast({
-        title: "Error",
-        description: "Selecciona un docente para este usuario.",
-        variant: "destructive",
-      })
-      return
+    // No extra validations required for vinculacion now
+
+    if (formData.dni) {
+      const cleanDni = formData.dni.trim()
+      if (!/^\d{8}$/.test(cleanDni)) {
+        toast.error("El DNI debe tener exactamente 8 dígitos numéricos.")
+        return
+      }
+      const dniDuplicado = usuarios.some(u => u.dni === cleanDni)
+      if (dniDuplicado) {
+        toast.error("El DNI ya está registrado por otro usuario.")
+        return
+      }
     }
 
-    if (formData.rol === "AUDITOR" && !formData.id_responsable) {
-      toast({
-        title: "Error",
-        description: "Selecciona un responsable para este usuario.",
-        variant: "destructive",
-      })
-      return
+    if (formData.email) {
+      const emailDuplicado = usuarios.some(u => u.email.toLowerCase() === formData.email.toLowerCase())
+      if (emailDuplicado) {
+        toast.error("El correo electrónico ya está registrado por otro usuario.")
+        return
+      }
     }
 
+    setSubmitting(true)
     try {
       const nuevoUsuario = await usuariosService.create(buildUsuarioPayload())
       setUsuarios((current) => [...current, nuevoUsuario])
-      toast({ title: "Éxito", description: "Usuario creado correctamente." })
+      toast.success("Usuario registrado con éxito.")
       handleNewDialogOpenChange(false)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creando usuario:", error)
-      toast({
-        title: "Error",
-        description: "No se pudo crear el usuario.",
-        variant: "destructive",
-      })
+      const errorMessage = error.response?.data?.message || "No se pudo crear el usuario."
+      toast.error(errorMessage)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -249,8 +233,8 @@ function UsuariosContent() {
       email: usuario.email || "",
       password: "",
       rol: usuario.rol || "",
-      id_docente: usuario.idDocente?.toString() ?? "",
-      id_responsable: usuario.idResponsable?.toString() ?? "",
+      dni: usuario.dni || "",
+      cargo: usuario.cargo || "",
       estado: usuario.estado ?? true,
     })
     setEditDialogOpen(true)
@@ -261,32 +245,32 @@ function UsuariosContent() {
     if (!selectedUsuario) return
 
     if (!formData.nombres || !formData.apellidos || !formData.email || !formData.rol) {
-      toast({
-        title: "Error",
-        description: "Completa nombres, apellidos, correo y rol.",
-        variant: "destructive",
-      })
+      toast.error("Completa nombres, apellidos, correo y rol.")
       return
     }
 
-    if (formData.rol === "DOCENTE" && !formData.id_docente) {
-      toast({
-        title: "Error",
-        description: "Selecciona un docente para este usuario.",
-        variant: "destructive",
-      })
-      return
+    if (formData.dni) {
+      const cleanDni = formData.dni.trim()
+      if (!/^\d{8}$/.test(cleanDni)) {
+        toast.error("El DNI debe tener exactamente 8 dígitos numéricos.")
+        return
+      }
+      const dniDuplicado = usuarios.some(u => u.dni === cleanDni && u.id !== selectedUsuario.id)
+      if (dniDuplicado) {
+        toast.error("El DNI ya está registrado por otro usuario.")
+        return
+      }
     }
 
-    if (formData.rol === "AUDITOR" && !formData.id_responsable) {
-      toast({
-        title: "Error",
-        description: "Selecciona un responsable para este usuario.",
-        variant: "destructive",
-      })
-      return
+    if (formData.email) {
+      const emailDuplicado = usuarios.some(u => u.email.toLowerCase() === formData.email.toLowerCase() && u.id !== selectedUsuario.id)
+      if (emailDuplicado) {
+        toast.error("El correo electrónico ya está registrado por otro usuario.")
+        return
+      }
     }
 
+    setSubmitting(true)
     try {
       const actualizado = await usuariosService.update(selectedUsuario.id, buildUsuarioPayload(true))
       setUsuarios((current) =>
@@ -294,15 +278,14 @@ function UsuariosContent() {
           usuario.id === selectedUsuario.id ? actualizado : usuario
         )
       )
-      toast({ title: "Éxito", description: "Usuario actualizado correctamente." })
+      toast.success("Usuario actualizado con éxito.")
       handleEditDialogOpenChange(false)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error actualizando usuario:", error)
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el usuario.",
-        variant: "destructive",
-      })
+      const errorMessage = error.response?.data?.message || "No se pudo actualizar el usuario."
+      toast.error(errorMessage)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -313,14 +296,10 @@ function UsuariosContent() {
     try {
       await usuariosService.delete(usuario.id)
       setUsuarios((current) => current.filter((item) => item.id !== usuario.id))
-      toast({ title: "Éxito", description: "Usuario eliminado." })
+      toast.success("Usuario eliminado.")
     } catch (error) {
       console.error("Error eliminando usuario:", error)
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el usuario.",
-        variant: "destructive",
-      })
+      toast.error("No se pudo eliminar el usuario.")
     }
   }
 
@@ -456,53 +435,36 @@ function UsuariosContent() {
                   </Select>
                 </div>
 
-                {formData.rol === "DOCENTE" && (
-                  <div className="space-y-2">
-                    <Label>Vincular con Docente</Label>
-                    <Select
-                      value={formData.id_docente}
-                      onValueChange={(v) => setFormData({ ...formData, id_docente: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar docente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {docentes.map((docente) => (
-                          <SelectItem key={docente.id} value={docente.id.toString()}>
-                            {docente.nombres} {docente.apellidos}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="dni">DNI</Label>
+                  <Input
+                    id="dni"
+                    placeholder="DNI"
+                    value={formData.dni}
+                    onChange={(e) => setFormData({ ...formData, dni: e.target.value.replace(/\D/g, "") })}
+                    maxLength={8}
+                  />
+                </div>
 
                 {formData.rol === "AUDITOR" && (
                   <div className="space-y-2">
-                    <Label>Vincular con Responsable</Label>
-                    <Select
-                      value={formData.id_responsable}
-                      onValueChange={(v) => setFormData({ ...formData, id_responsable: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar responsable" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {responsables.map((responsable) => (
-                          <SelectItem key={responsable.id} value={responsable.id.toString()}>
-                            {responsable.nombres} {responsable.apellidos}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="cargo">Cargo</Label>
+                    <Input
+                      id="cargo"
+                      placeholder="Ej: Vicerrector Académico, Decano"
+                      value={formData.cargo}
+                      onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
+                    />
                   </div>
                 )}
 
                 <DialogFooter>
-                  <Button variant="outline" type="button" onClick={() => handleNewDialogOpenChange(false)}>
+                  <Button variant="outline" type="button" onClick={() => handleNewDialogOpenChange(false)} disabled={submitting}>
                     Cancelar
                   </Button>
-                  <Button type="submit">Crear Usuario</Button>
+                  <Button type="submit" disabled={submitting}>
+                    {submitting ? "Creando..." : "Crear Usuario"}
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -609,7 +571,7 @@ function UsuariosContent() {
                     <TableHead>Usuario</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Rol</TableHead>
-                    <TableHead>Vinculacion</TableHead>
+                    <TableHead>DNI / Cargo</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead>Creado</TableHead>
                     <TableHead className="w-12"></TableHead>
@@ -640,11 +602,8 @@ function UsuariosContent() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {usuario.rol === "DOCENTE" && usuario.nombreDocente
-                            ? `Docente: ${usuario.nombreDocente}`
-                            : usuario.rol === "AUDITOR" && usuario.nombreResponsable
-                            ? `Responsable: ${usuario.nombreResponsable}`
-                            : "-"}
+                           {usuario.dni ? `DNI: ${usuario.dni}` : "-"}
+                           {usuario.rol === "AUDITOR" && usuario.cargo ? ` (${usuario.cargo})` : ""}
                         </TableCell>
                         <TableCell>
                           <Badge variant={usuario.estado ? "default" : "secondary"}>
@@ -790,45 +749,26 @@ function UsuariosContent() {
               </Select>
             </div>
 
-            {formData.rol === "DOCENTE" && (
-              <div className="space-y-2">
-                <Label>Vincular con Docente</Label>
-                <Select
-                  value={formData.id_docente}
-                  onValueChange={(v) => setFormData({ ...formData, id_docente: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar docente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {docentes.map((docente) => (
-                      <SelectItem key={docente.id} value={docente.id.toString()}>
-                        {docente.nombres} {docente.apellidos}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="edit-dni">DNI</Label>
+              <Input
+                id="edit-dni"
+                placeholder="DNI"
+                value={formData.dni}
+                onChange={(e) => setFormData({ ...formData, dni: e.target.value.replace(/\D/g, "") })}
+                maxLength={8}
+              />
+            </div>
 
             {formData.rol === "AUDITOR" && (
               <div className="space-y-2">
-                <Label>Vincular con Responsable</Label>
-                <Select
-                  value={formData.id_responsable}
-                  onValueChange={(v) => setFormData({ ...formData, id_responsable: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar responsable" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {responsables.map((responsable) => (
-                      <SelectItem key={responsable.id} value={responsable.id.toString()}>
-                        {responsable.nombres} {responsable.apellidos}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="edit-cargo">Cargo</Label>
+                <Input
+                  id="edit-cargo"
+                  placeholder="Ej: Vicerrector Académico, Decano"
+                  value={formData.cargo}
+                  onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
+                />
               </div>
             )}
 
@@ -849,10 +789,12 @@ function UsuariosContent() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => handleEditDialogOpenChange(false)}>
+              <Button variant="outline" type="button" onClick={() => handleEditDialogOpenChange(false)} disabled={submitting}>
                 Cancelar
               </Button>
-              <Button type="submit">Guardar cambios</Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Guardando..." : "Guardar cambios"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

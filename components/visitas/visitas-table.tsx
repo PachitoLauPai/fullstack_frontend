@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -169,17 +170,18 @@ export function VisitasTable({ showOnlyMine = false, filters }: VisitasTableProp
   }
 
   return (
-    <div className="overflow-x-auto">
+    <>
+    <div className="overflow-x-auto rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950">
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[80px]">ID</TableHead>
-            <TableHead>Docente</TableHead>
-            <TableHead className="hidden md:table-cell">Asignatura</TableHead>
-            <TableHead className="hidden lg:table-cell">Sede</TableHead>
-            <TableHead className="hidden sm:table-cell">Fecha</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead className="w-[60px]">Acciones</TableHead>
+        <TableHeader className="bg-slate-50/70 dark:bg-slate-900/40">
+          <TableRow className="hover:bg-transparent border-b border-slate-200 dark:border-slate-800">
+            <TableHead className="w-[80px] font-semibold text-slate-700 dark:text-slate-300 py-3">ID</TableHead>
+            <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3">Docente</TableHead>
+            <TableHead className="hidden md:table-cell font-semibold text-slate-700 dark:text-slate-300 py-3">Asignatura</TableHead>
+            <TableHead className="hidden lg:table-cell font-semibold text-slate-700 dark:text-slate-300 py-3">Sede</TableHead>
+            <TableHead className="hidden sm:table-cell font-semibold text-slate-700 dark:text-slate-300 py-3">Fecha</TableHead>
+            <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3">Estado</TableHead>
+            <TableHead className="w-[60px] font-semibold text-slate-700 dark:text-slate-300 py-3">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -187,47 +189,47 @@ export function VisitasTable({ showOnlyMine = false, filters }: VisitasTableProp
             const config = estadoConfig[visita.estadoVisita] || estadoConfig.BORRADOR
             const Icon = config.icon
             return (
-              <TableRow key={visita.id}>
-                <TableCell className="font-mono text-sm">VIS-{String(visita.id).padStart(3, "0")}</TableCell>
-                <TableCell>
+              <TableRow key={visita.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10 even:bg-slate-50/20 dark:even:bg-slate-900/5 border-b border-slate-150 dark:border-slate-800/60 transition-colors">
+                <TableCell className="font-mono text-sm font-semibold text-slate-500 dark:text-slate-400 py-3.5">VIS-{String(visita.id).padStart(3, "0")}</TableCell>
+                <TableCell className="py-3.5">
                   <div>
-                    <p className="font-medium">{visita.nombreDocente} {visita.apellidosDocente}</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">{visita.nombreDocente} {visita.apellidosDocente}</p>
                     <p className="text-xs text-muted-foreground md:hidden">{visita.nombreAsignatura}</p>
                   </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell className="hidden md:table-cell py-3.5 text-slate-600 dark:text-slate-300">
                   <div>
-                    <p>{visita.nombreAsignatura}</p>
+                    <p className="font-medium">{visita.nombreAsignatura}</p>
                   </div>
                 </TableCell>
-                <TableCell className="hidden lg:table-cell">{visita.nombreSede}</TableCell>
-                <TableCell className="hidden sm:table-cell">
+                <TableCell className="hidden lg:table-cell py-3.5 text-slate-600 dark:text-slate-300 font-medium">{visita.nombreSede}</TableCell>
+                <TableCell className="hidden sm:table-cell py-3.5">
                   <div>
-                    <p className="text-sm">{visita.fechaVisita}</p>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{visita.fechaVisita}</p>
                     <p className="text-xs text-muted-foreground">{visita.horaInicio}</p>
                   </div>
                 </TableCell>
-                <TableCell>
-                  <Badge className={config.className}>
+                <TableCell className="py-3.5">
+                  <Badge className={cn("px-2.5 py-0.5 font-medium rounded-full shadow-xs text-xs", config.className)}>
                     <Icon className="h-3 w-3 mr-1" />
                     <span className="hidden sm:inline">{config.label}</span>
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-3.5">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md">
+                        <MoreHorizontal className="h-4 w-4 text-slate-500" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/visitas/${visita.id}`}>
+                        <Link href={`/visitas/${visita.id}`} className="cursor-pointer">
                           <Eye className="h-4 w-4 mr-2" />
                           Ver detalle
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleGenerarPdf(visita.id)}>
+                      <DropdownMenuItem onClick={() => handleGenerarPdf(visita.id)} className="cursor-pointer">
                         <FileText className="h-4 w-4 mr-2" />
                         Generar PDF
                       </DropdownMenuItem>
@@ -239,13 +241,13 @@ export function VisitasTable({ showOnlyMine = false, filters }: VisitasTableProp
           })}
         </TableBody>
       </Table>
-
+    </div>
       <div className="flex items-center justify-between pt-4">
         <p className="text-sm text-muted-foreground">
           Mostrando {visitas.length} visita{visitas.length !== 1 ? "s" : ""}
         </p>
       </div>
-    </div>
+    </>
   )
 }
 

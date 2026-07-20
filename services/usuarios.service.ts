@@ -6,11 +6,10 @@ export interface Usuario {
   nombres: string
   apellidos: string
   idRol: number
+  rol?: string
   nombreRol?: string
-  idDocente?: number | null
-  idResponsable?: number | null
-  nombreDocente?: string
-  nombreResponsable?: string
+  dni?: string
+  cargo?: string
   estado?: boolean
   createdAt?: string
 }
@@ -21,8 +20,8 @@ export interface UsuarioCreateData {
   apellidos: string
   password?: string
   idRol: number
-  idDocente?: number | null
-  idResponsable?: number | null
+  dni?: string
+  cargo?: string
 }
 
 export interface UsuarioUpdateData extends UsuarioCreateData {

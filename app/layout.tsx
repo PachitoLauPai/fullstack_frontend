@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
+import { Toaster as ShadcnToaster } from '@/components/ui/toaster'
 import './globals.css'
 
 const inter = Inter({
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         {children}
         <Toaster position="top-right" richColors />
+        <ShadcnToaster />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
